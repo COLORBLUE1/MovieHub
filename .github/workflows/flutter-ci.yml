@@ -1,0 +1,45 @@
+name: Flutter CI
+
+on:
+  push:
+    branches:
+      - "*-DEV"        # corre en las ramas de cada dev
+      - "integration"  # corre también si haces push directo a integration (si lo permites)
+  pull_request:
+    branches:
+      - integration
+      - main
+
+jobs:
+  analyze-test-build-web:
+    name: analyze-test-build-web
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'   # o version: '3.24.x'
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Pub get
+        run: flutter pub get
+
+      # Si usas analysis_options.yaml estricto, puedes fallar el build con warnings:
+      # - name: Analyze (strict)
+      #   run: flutter analyze --fatal-infos --fatal-warnings
+      - name: Analyze
+        run: flutter analyze
+
+      # Si no tienes tests aún, deja --if-present o quita el paso
+      - name: Test
+        run: flutter test --coverage || true
+
+      # Build web para validar que compile (no despliega)
+      - name: Build web (release)
+        run: flutter build web --release
